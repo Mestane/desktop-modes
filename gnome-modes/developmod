@@ -1,0 +1,114 @@
+#!/bin/bash
+#                       LAUNCH DEVELOPER MODE GNOME DE
+#
+top_bar_enabled=$(gsettings get org.gnome.shell.extensions.just-perfection panel)
+notification_enabled=$(gsettings get org.gnome.desktop.notifications show-banners)
+current_volume=$(pactl get-sink-volume @DEFAULT_SINK@ | grep -oP '\d+%' | head -1)
+intellij_name=$(wmctrl -lx | grep "jetbrain" | awk '{print $5}')
+current_wallpaper_dark=$(gsettings get org.gnome.desktop.background picture-uri-dark)
+current_wallpaper=$(gsettings get org.gnome.desktop.background picture-uri)
+check_monitor_active=$(xrandr --listactivemonitors | grep DP-4)
+
+# notify-send "DEVELOPER MODE ACTIVATED" --icon=lock --app-name="DEVELOPER" "Good luck with your code! Notifications are turned off!"
+# sleep 2
+# gsettings set org.gnome.desktop.notifications show-banners false &
+# echo "Notifications are turned off."
+
+# if ! [ -n "$check_monitor_active" ]; then
+#   gsettings set org.gnome.desktop.notifications show-banners false &
+#   toggle-monitors &
+#   wait
+#   sleep 4
+# fi
+
+if pgrep "conky" >/dev/null; then
+  echo "Disabling Conky ..."
+  pkill conky
+  # sleep 0.05
+fi
+
+# # Change user theme if it's not already set
+# current_theme=$(gsettings get org.gnome.shell.extensions.user-theme name | tr -d "'")
+
+# ------------------------------------------------------------------------------------------
+
+# Define extension IDs and names
+extensions=(
+    "appindicatorsupport@rgcjonas.gmail.com:AppIndicator & KStatusNotifierItem"
+    "gsconnect@andyholmes.github.io:GSConnect"
+    "quick-settings-tweaks@qwreey:Quick Setting Tweaker"
+    "dash-to-dock@micxgx.gmail.com:dash-to-dock"
+    "compiz-alike-magic-lamp-effect@hermes83.github.com:Magic lamp effect"
+    "Vitals@CoreCoding.com:Vitals"
+    "arch-update@RaphaelRochet:Arch update"
+    "drive-menu@gnome-shell-extensions.gcampax.github.com:Drive menu"
+)
+
+# Loop through extensions
+for ext in "${extensions[@]}"; do
+    ext_id="${ext%%:*}"  # Extract extension ID
+    ext_name="${ext#*:}"  # Extract extension name
+
+    # Check if extension is active and disable it
+    if ! gnome-extensions info "$ext_id" | grep -q "State: INACTIVE"; then
+        gnome-extensions disable "$ext_id"
+        echo "Disabling $ext_name ..."
+        sleep 0.05
+    fi
+done
+
+
+# ------------------------------------------------------------------------------------------
+# Disable GNOME top bar if it's not already disabled
+# ----------------------------------------------------------------------------------------------------------------------------------------
+
+if [ "$top_bar_enabled" != "false" ]; then
+    gsettings set org.gnome.shell.extensions.just-perfection panel 'false'
+    echo "Disabling GNOME top bar ..."
+    sleep 0.05
+fi
+# Change wallpaper for dark mode if it's not already set
+if [ "$current_wallpaper_dark" != "'file://$HOME/Pictures/wallpapers/Gradient.png'" ]; then
+    gsettings set org.gnome.desktop.background picture-uri-dark "file://$HOME/Pictures/wallpapers/Gradient.png"
+    echo "Setting dark mode wallpaper ..."
+    sleep 0.05
+fi
+# Change wallpaper for light mode if it's not already set
+if [ "$current_wallpaper" != "'file://$HOME/Pictures/wallpapers/Gradient.png'" ]; then
+    gsettings set org.gnome.desktop.background picture-uri "file://$HOME/Pictures/wallpapers/Gradient.png"
+    echo "Setting light mode wallpaper ..."
+    sleep 0.05
+fi
+# Set volume to 15% if it's not already set
+if [ "$current_volume" != "15%" ]; then
+    pactl set-sink-volume @DEFAULT_SINK@ 15%
+    echo "Setting volume to 15% ..."
+    sleep 0.05
+fi
+
+
+current_theme=$(gsettings get org.gnome.shell.extensions.user-theme name)
+if [ "$current_theme" != "''" ]; then
+    echo "Changing user theme to 'default' ..."
+    gsettings set org.gnome.shell.extensions.user-theme name ''
+fi
+
+# Close all window without Tilix and Intellij idea.
+# if [ -n "$intellij_name" ]; then
+#   wmctrl -l | grep -vE "Tilix|$intellij_name" | awk '{print $1}' | xargs -I {} wmctrl -ic {}
+# else
+#   wmctrl -l | grep -v "Tilix" | awk '{print $1}' | xargs -I {} wmctrl -ic {}
+#   intellij-idea-ultimate-edition >/dev/null 2>&1 &
+# fi
+
+notify-send "DEVELOPER MODE ACTIVATED" --icon=lock --app-name="DEVELOPER" "Good luck with your code! Notifications are turned off!"
+
+if [ "$notification_enabled" != "false" ]; then
+    gsettings set org.gnome.desktop.notifications show-banners 'false' 
+    echo "Notifications are turned off."
+fi
+# -----------------------------------------------------------------------------------------------------------------------------------------
+#
+# ps aux | grep intellij | head -n 1 | awk '{print $2}'
+# wmctrl -lp | grep -vE "Tilix|25189"
+echo "Yes,Full Concentration DEVELOPER Mode Activated. Good luck with your code!"

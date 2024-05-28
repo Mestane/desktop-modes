@@ -1,0 +1,113 @@
+#!/bin/bash
+#               LAUNCH STANDART MODE GNOME DE
+#
+top_bar_enabled=$(gsettings get org.gnome.shell.extensions.just-perfection panel)
+current_wallpaper=$(gsettings get org.gnome.desktop.background picture-uri)
+current_wallpaper_dark=$(gsettings get org.gnome.desktop.background picture-uri-dark)
+current_volume=$(pactl get-sink-volume @DEFAULT_SINK@ | grep -oP '\d+%' | head -1)
+check_monitor_active=$(xrandr --listactivemonitors | grep DP-4)
+notification_enabled=$(gsettings get org.gnome.desktop.notifications show-banners)
+browser_name=$(wmctrl -lx | grep "firefox" | awk '{print $5}')
+
+
+# notify-send "STANDARD MODE ACTIVATED" --icon=bell --app-name="Home" "Welcome Home!"
+# gsettings set org.gnome.desktop.notifications show-banners true &
+# echo "Notifications are turned on."
+
+current_theme=$(gsettings get org.gnome.shell.extensions.user-theme name)
+if [ "$current_theme" != "'test'" ]; then
+    echo "Changing user theme to 'test' ..."
+    gsettings set org.gnome.shell.extensions.user-theme name 'test'
+fi
+
+#-------------------------------------------------------------------------------------
+# if [ -n "$check_monitor_active" ]; then
+#   gsettings set org.gnome.desktop.notifications show-banners true &
+#   toggle-monitors &
+#   wait
+#   sleep 4
+# fi
+#-------------------------------------------------------------------------------------
+# Check and start conky files
+if ! pgrep "conky" >/dev/null; then
+  echo "Conky starting ..."
+  conky -c ~/.config/conky/Botein/Botein.conf >/dev/null 2>&1 &
+  # conky -c ~/.config/conky/Sadachbia-DarkF-v2.0\(1\)/Sadachbia-Dark/Sadachbia-Dark.conf >/dev/null 2>&1 &
+  # sleep 0.5
+fi
+
+#-------------------------------------------------------------------------------------
+#
+
+##  Define extension IDs and names
+extensions=(
+    "appindicatorsupport@rgcjonas.gmail.com:AppIndicator & KStatusNotifierItem"
+    "gsconnect@andyholmes.github.io:GSConnect"
+    "quick-settings-tweaks@qwreey:Quick Setting Tweaker"
+    "dash-to-dock@micxgx.gmail.com:dash-to-dock"
+    "compiz-alike-magic-lamp-effect@hermes83.github.com:Magic lamp effect"
+    "Vitals@CoreCoding.com:Vitals"
+    "arch-update@RaphaelRochet:Arch update"
+    "drive-menu@gnome-shell-extensions.gcampax.github.com:Drive menu"
+)
+
+# Loop through extensions
+for ext in "${extensions[@]}"; do
+    ext_id="${ext%%:*}"  # Extract extension ID
+    ext_name="${ext#*:}"  # Extract extension name
+
+    # Check if extension is active and disable it
+    if ! gnome-extensions info "$ext_id" | grep -q "State: ACTIVE"; then
+        gnome-extensions enable "$ext_id"
+        echo "Enabling $ext_name ..."
+        sleep 0.08
+    fi
+done
+#-------------------------------------------------------------------------------------
+#
+
+#   Enable GNOME top bar if it's not already enable
+if [ "$top_bar_enabled" != "true" ]; then
+    gsettings set org.gnome.shell.extensions.just-perfection panel 'true'
+    echo "Enabling Gnome top bar ..."
+    sleep 0.08
+fi
+#-------------------------------------------------------------------------------------
+
+#   Change wallpaper for dark mode if it's not already set
+if [ "$current_wallpaper_dark" != "'file://$HOME/.local/share/backgrounds/nordnew/nordnew-d.png'" ]; then
+    gsettings set org.gnome.desktop.background picture-uri-dark "file://$HOME/.local/share/backgrounds/nordnew/nordnew-d.png"
+    echo "Setting dark mode wallpaper ..."
+fi
+#-------------------------------------------------------------------------------------
+#   Change wallpaper for light mode if it's not already set
+if [ "$current_wallpaper" != "'file://$HOME/.local/share/backgrounds/nordnew/nordnew-l.png'" ]; then
+    gsettings set org.gnome.desktop.background picture-uri "file://$HOME/.local/share/backgrounds/nordnew/nordnew-l.png"
+    echo "Setting light mode wallpaper ..."
+fi
+#-------------------------------------------------------------------------------------
+#   Set volume to 50% if it's not already set
+if [ "$current_volume" != "50%" ]; then
+    pactl set-sink-volume @DEFAULT_SINK@ 50%
+    echo "Setting volume to 50% ..."
+    sleep 0.05
+fi
+
+# Disable all open windows without Tilix and Firefox
+# if [ -n "$browser_name" ]; then
+#   wmctrl -l | grep -vE "Tilix|$browser_name|conky" | awk '{print $1}' | xargs -I {} wmctrl -ic {}
+# else
+#   wmctrl -l | grep -vE "Tilix|conky" | awk '{print $1}' | xargs -I {} wmctrl -ic {}
+#   firefox >/dev/null 2>&1 &
+#   echo "Firefox is starting ..."
+# fi
+
+
+if [ "$notification_enabled" != "true" ]; then
+    gsettings set org.gnome.desktop.notifications show-banners 'true' 
+    echo "Notifications are turned on."
+fi
+
+notify-send "STANDARD MODE ACTIVATED" --icon=bell --app-name="Home" "Welcome Home!"
+#-------------------------------------------------------------------------------------
+echo "Standard Mode Activated. Good Luck Mate!"
